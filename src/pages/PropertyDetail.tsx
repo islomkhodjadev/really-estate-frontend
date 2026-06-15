@@ -36,7 +36,7 @@ export default function PropertyDetail() {
         .slice(0, 3)
     );
   }
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); load(); }, [id]);
 
   if (!p) return <p className="muted">Loading…</p>;
 

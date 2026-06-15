@@ -11,7 +11,7 @@ export default {
           800: "#3730a3", 900: "#312e81",
         },
         // Lumen palette
-        accent: "#C2643B",      // single warm "wax-seal" accent (terracotta)
+        accent: "#7C3AED",      // violet accent — matches gradient-to
         ink: "#0E1116",         // near-black text
         muted: "#5B6478",       // secondary text
         surface: "#FFFFFF",     // cards / panels
