@@ -14,6 +14,7 @@ export default function PropertyDetail() {
   const [agent, setAgent] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [similar, setSimilar] = useState<any[]>([]);
+  const [priceEval, setPriceEval] = useState<{ pct: number; label: string; color: string; districtAvg: number; pricePerM2: number | null; districtCount: number } | null>(null);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [date, setDate] = useState("");
@@ -29,12 +30,37 @@ export default function PropertyDetail() {
       const { items } = await itemList("review", {}, 1, 200);
       setReviews(items.filter((r: any) => r.user_base_id === agentId));
     }
-    const all = await itemList("property", {}, 1, 50);
+    const all = await itemList("property", {}, 1, 200);
+    const sameDistrict = all.items.filter(
+      (x: any) => x.district === prop.district && x.guid !== id && Number(x.price) > 0
+    );
     setSimilar(
       all.items
         .filter((x: any) => x.guid !== id && (one(x.property_type) === one(prop.property_type) || x.district === prop.district))
         .slice(0, 3)
     );
+
+    // price evaluation
+    const pool = sameDistrict.length >= 3 ? sameDistrict : all.items.filter((x: any) => x.guid !== id && Number(x.price) > 0);
+    if (pool.length >= 2 && Number(prop.price) > 0) {
+      const prices = pool.map((x: any) => Number(x.price)).sort((a: number, b: number) => a - b);
+      const myPrice = Number(prop.price);
+      const below = prices.filter((v: number) => v < myPrice).length;
+      const pct = Math.round((below / prices.length) * 100);
+      const districtAvg = Math.round(prices.reduce((s: number, v: number) => s + v, 0) / prices.length);
+      const pricePerM2 = prop.area ? Math.round(myPrice / Number(prop.area)) : null;
+      const label =
+        pct <= 20 ? "Great deal" :
+        pct <= 40 ? "Below average" :
+        pct <= 60 ? "Fair price" :
+        pct <= 80 ? "Above average" : "Premium";
+      const color =
+        pct <= 20 ? "#22c55e" :
+        pct <= 40 ? "#84cc16" :
+        pct <= 60 ? "#f59e0b" :
+        pct <= 80 ? "#f97316" : "#ef4444";
+      setPriceEval({ pct, label, color, districtAvg, pricePerM2, districtCount: pool.length });
+    }
   }
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); setCur(0); load(); }, [id]);
 
@@ -176,6 +202,60 @@ export default function PropertyDetail() {
           )}
         </div>
       </header>
+
+      {/* --------------------------------------------------- price evaluation */}
+      {priceEval && (
+        <div className="mt-6 rounded-2xl border border-ink/[0.08] bg-surface p-5 shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[.2em] text-muted">
+              Price evaluation · {priceEval.districtCount} listings in area
+            </span>
+            <span
+              className="rounded-full px-3 py-1 text-xs font-semibold"
+              style={{ background: priceEval.color + "18", color: priceEval.color }}
+            >
+              {priceEval.label}
+            </span>
+          </div>
+
+          {/* gradient bar */}
+          <div className="relative h-2.5 w-full rounded-full overflow-hidden"
+            style={{ background: "linear-gradient(to right, #22c55e, #84cc16, #f59e0b, #f97316, #ef4444)" }}>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border-2 border-white shadow-soft transition-all duration-500"
+              style={{ left: `clamp(8px, calc(${priceEval.pct}% - 8px), calc(100% - 8px))`, background: priceEval.color }}
+            />
+          </div>
+
+          {/* axis labels */}
+          <div className="mt-1.5 flex justify-between text-[10px] font-medium text-muted">
+            <span>Cheapest</span>
+            <span>Most expensive</span>
+          </div>
+
+          {/* stats row */}
+          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-ink/[0.06] pt-4">
+            <div className="text-center">
+              <div className="font-stat text-base font-semibold tabular-nums text-ink">
+                {priceEval.pct}th
+              </div>
+              <div className="text-[10px] text-muted mt-0.5">percentile</div>
+            </div>
+            <div className="text-center border-x border-ink/[0.06]">
+              <div className="font-stat text-base font-semibold tabular-nums text-ink">
+                {priceEval.districtAvg.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-muted mt-0.5">area avg (USD)</div>
+            </div>
+            <div className="text-center">
+              <div className="font-stat text-base font-semibold tabular-nums text-ink">
+                {priceEval.pricePerM2 ? `${priceEval.pricePerM2.toLocaleString()}` : "—"}
+              </div>
+              <div className="text-[10px] text-muted mt-0.5">USD / m²</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ------------------------------------------- main / sticky-sidebar grid */}
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
