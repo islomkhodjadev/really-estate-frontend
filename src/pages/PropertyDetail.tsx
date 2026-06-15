@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { itemGet, itemList, itemCreate, invoke, one, imgUrl } from "../api/client";
 import { parseLatLng } from "../api/util";
-import { PropertyMap } from "../components/PropertyMap";
+import { PropertyMap, PriceHeatmap, HeatPoint } from "../components/PropertyMap";
 import { PropertyCard } from "./PropertyCard";
 import { useAuth } from "../auth/AuthContext";
 import { Heart, Star, ChevronRight } from "../components/icons";
@@ -14,6 +14,7 @@ export default function PropertyDetail() {
   const [agent, setAgent] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [similar, setSimilar] = useState<any[]>([]);
+  const [heatPoints, setHeatPoints] = useState<HeatPoint[]>([]);
   const [priceEval, setPriceEval] = useState<{ pct: number; label: string; color: string; districtAvg: number; pricePerM2: number | null; districtCount: number } | null>(null);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -39,6 +40,19 @@ export default function PropertyDetail() {
         .filter((x: any) => x.guid !== id && (one(x.property_type) === one(prop.property_type) || x.district === prop.district))
         .slice(0, 3)
     );
+
+    // build heatmap points from all priced+located properties
+    const myLatLng = parseLatLng(prop.location);
+    const pts: HeatPoint[] = [];
+    if (myLatLng && Number(prop.price) > 0) {
+      pts.push({ pos: myLatLng, price: Number(prop.price), title: prop.title, isCurrent: true });
+    }
+    for (const x of all.items) {
+      if (x.guid === id || !Number(x.price)) continue;
+      const ll = parseLatLng(x.location);
+      if (ll) pts.push({ pos: ll, price: Number(x.price), title: x.title });
+    }
+    setHeatPoints(pts);
 
     // price evaluation
     const pool = sameDistrict.length >= 3 ? sameDistrict : all.items.filter((x: any) => x.guid !== id && Number(x.price) > 0);
@@ -290,9 +304,17 @@ export default function PropertyDetail() {
 
           {latlng && (
             <section className="mt-10">
-              <h2 className="section-title text-2xl">Location</h2>
-              <div className="mt-3 overflow-hidden rounded-2xl ring-1 ring-ink/[0.06] shadow-card">
-                <PropertyMap points={[{ pos: latlng }]} center={latlng} height={260} />
+              <h2 className="section-title text-2xl">Location &amp; Price heatmap</h2>
+              <p className="muted mt-1 text-sm">
+                Each dot = a listing. Color shows price relative to the area — green is the best deal, red is premium.
+              </p>
+              <div className="mt-3">
+                {heatPoints.length >= 2
+                  ? <PriceHeatmap points={heatPoints} center={latlng} height={340} />
+                  : <div className="overflow-hidden rounded-2xl ring-1 ring-ink/[0.06] shadow-card">
+                      <PropertyMap points={[{ pos: latlng }]} center={latlng} height={260} />
+                    </div>
+                }
               </div>
             </section>
           )}
