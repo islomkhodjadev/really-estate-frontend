@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 24px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply bg-bg text-ink antialiased font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* paper-grain warmth — extremely faint noise overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  a { @apply text-brand-600 no-underline transition-colors hover:text-brand-700; }
+
+  h1, h2, h3 { @apply font-display; }
+  h1 { @apply text-3xl font-semibold tracking-tight text-ink; line-height: 1.04; }
+  h2 { @apply text-xl font-semibold tracking-tight text-ink; }
+  h3 { @apply text-lg font-semibold text-ink; }
+
+  /* tabular lining numerals helper used by .price / stats */
+  .tnum { font-variant-numeric: tabular-nums lining-nums; }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------- nav */
+  .nav {
+    @apply sticky top-0 z-30 flex items-center gap-5 px-6 h-16
+           bg-white/70 backdrop-blur-xl border-b border-ink/[0.06]
+           transition-all duration-300;
+  }
+  .nav .brand {
+    @apply font-display font-semibold text-xl text-ink tracking-tight;
+  }
+  .nav nav { @apply hidden sm:flex gap-6 text-sm font-medium text-muted; }
+  .nav nav a {
+    @apply relative text-muted transition-colors hover:text-ink
+           after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0
+           after:bg-brand-600 after:transition-all after:duration-300 hover:after:w-full;
+  }
+  .spacer { @apply flex-1; }
+  .userbox { @apply flex items-center gap-3 text-sm; }
+
+  /* ----------------------------------------------------------- containers */
+  .container { @apply max-w-6xl mx-auto px-6 py-8; }
+  .container-wide { @apply max-w-7xl mx-auto px-6; }
+
+  /* ------------------------------------------------------------- sections */
+  .section { @apply py-12 sm:py-16; }
+  .section-title {
+    @apply font-display text-2xl sm:text-3xl font-semibold tracking-tight text-ink;
+    line-height: 1.06;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase text-muted;
+    letter-spacing: 0.22em;
+  }
+
+  /* -------------------------------------------------------------- buttons */
+  .btn, button {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600
+           px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition-all
+           duration-200 hover:bg-brand-700 active:scale-[.98] cursor-pointer
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+  }
+  button.ghost, .btn.ghost {
+    @apply bg-transparent text-ink ring-1 ring-ink/15 shadow-none
+           hover:bg-ink/[0.04] hover:ring-ink/25;
+  }
+
+  /* ----------------------------------------------------------------- text */
+  .muted { @apply text-muted text-sm; }
+  .price {
+    @apply font-display font-semibold text-ink tnum;
+    font-size: 1.375rem; /* ~22px */
+    line-height: 1.1;
+  }
+
+  /* ------------------------------------------------------- layout helpers */
+  .grid { display: grid; @apply gap-6 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]; }
+  .row { @apply flex gap-3 flex-wrap; }
+
+  /* ---------------------------------------------------------------- cards */
+  .card {
+    @apply block bg-surface rounded-2xl overflow-hidden shadow-card
+           ring-1 ring-ink/[0.05] transition-all duration-200 ease-out
+           hover:-translate-y-1 hover:shadow-soft;
+  }
+  .card .thumb {
+    @apply h-56 bg-slate-100 bg-center bg-cover flex items-center justify-center
+           text-muted text-sm overflow-hidden transition-transform duration-700 ease-out;
+  }
+  /* ken-burns settle on card hover */
+  .card:hover .thumb { transform: scale(1.05); }
+  .card .body { @apply p-4; }
+  .thumb { @apply bg-slate-100 bg-center bg-cover flex items-center justify-center text-muted; }
+
+  /* badge — soft tinted status chip */
+  .badge {
+    @apply inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full
+           bg-brand-50 text-brand-700 mr-1.5 capitalize;
+  }
+
+  /* ---------------------------------------------------------------- forms */
+  .field { @apply flex flex-col gap-1.5 mb-3; }
+  .field label { @apply text-xs font-medium text-muted; }
+  input, select, textarea {
+    @apply rounded-sm border border-ink/15 px-3 py-2.5 text-sm bg-white text-ink
+           outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100
+           placeholder:text-muted/60;
+  }
+  input:disabled { @apply bg-slate-50 text-muted; }
+
+  .panel {
+    @apply bg-surface rounded-2xl p-6 shadow-card ring-1 ring-ink/[0.05];
+  }
+  .auth { @apply max-w-sm mx-auto mt-14; }
+
+  .err { @apply bg-rose-50 text-rose-700 px-3.5 py-2.5 rounded-sm text-sm mb-3 border border-rose-100; }
+  .ok  { @apply bg-emerald-50 text-emerald-700 px-3.5 py-2.5 rounded-sm text-sm mb-3 border border-emerald-100; }
+
+  /* --------------------------------------------------------------- tables */
+  table { @apply w-full border-collapse text-sm; }
+  th, td { @apply text-left py-3 px-3 border-b border-ink/[0.08]; }
+  th { @apply text-muted font-semibold text-xs uppercase tracking-wider; }
+
+  /* -------------------------------------------------------------- filters */
+  .filters {
+    @apply flex gap-3 flex-wrap items-end mb-6 bg-surface rounded-2xl p-5
+           shadow-card ring-1 ring-ink/[0.05];
+  }
+
+  /* ----------------------------------------------------------------- stat */
+  .stat {
+    @apply bg-surface rounded-2xl px-5 py-4 min-w-[150px] shadow-card ring-1 ring-ink/[0.05]
+           transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
+  }
+  .stat .n { @apply font-stat text-2xl font-bold text-ink tnum; }
+
+  /* ----------------------------------------------------------------- tabs */
+  .tabs { @apply flex gap-2 flex-wrap mb-4; }
+  .tabs button {
+    @apply rounded-full bg-ink/[0.05] text-muted shadow-none px-4 py-1.5
+           hover:bg-ink/[0.08] hover:text-ink;
+  }
+  .tabs button.active { @apply bg-brand-600 text-white shadow-glow hover:bg-brand-700; }
+
+  /* ===================== NEW PREMIUM UTILITY CLASSES ===================== */
+
+  /* gradient editorial hero band */
+  .gradient-hero {
+    @apply relative overflow-hidden rounded-b-[2.5rem] text-white;
+    background-image: linear-gradient(to bottom right, #4338CA 0%, #5B3FD6 50%, #7C3AED 100%);
+  }
+  /* dotted-grid mask faded at edges, layered over the gradient */
+  .gradient-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 100%);
+    opacity: 0.4;
+  }
+
+  /* glassmorphism surface */
+  .glass {
+    @apply bg-white/10 backdrop-blur-xl ring-1 ring-white/20 rounded-2xl;
+  }
+
+  /* status / toggle chip — soft tinted pill */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium
+           bg-brand-50 text-brand-700 transition-colors;
+  }
+
+  /* interactive filter pill */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium
+           bg-white text-ink ring-1 ring-ink/10 transition-all cursor-pointer
+           hover:ring-ink/20 hover:-translate-y-px;
+  }
+  .pill.active { @apply bg-brand-600 text-white ring-brand-600 shadow-glow; }
+
+  /* loading skeleton shimmer */
+  .skeleton {
+    @apply rounded-2xl bg-slate-200/70;
+    background-image: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0) 0%,
+      rgba(255, 255, 255, 0.65) 50%,
+      rgba(226, 232, 240, 0) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* hover lift helper */
+  .lift {
+    @apply transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-soft;
+  }
+}
+
+@layer utilities {
+  /* gradient clip-text for hero accent phrase (has solid fallback color via parent) */
+  .clip-text {
+    background-image: linear-gradient(to right, #818cf8, #a78bfa, #d946ef);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-float,
+    .animate-shimmer { animation: none !important; }
+    html { scroll-behavior: auto; }
+  }
+}
