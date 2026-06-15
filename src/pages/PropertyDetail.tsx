@@ -5,7 +5,7 @@ import { parseLatLng } from "../api/util";
 import { PropertyMap } from "../components/PropertyMap";
 import { PropertyCard } from "./PropertyCard";
 import { useAuth } from "../auth/AuthContext";
-import { Heart, Star } from "../components/icons";
+import { Heart, Star, ChevronRight } from "../components/icons";
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -36,12 +36,16 @@ export default function PropertyDetail() {
         .slice(0, 3)
     );
   }
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); load(); }, [id]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); setCur(0); load(); }, [id]);
+
+  const [cur, setCur] = useState(0);
 
   if (!p) return <p className="muted">Loading…</p>;
 
   const gallery: string[] = [one(p.main_photo), ...(Array.isArray(p.photos) ? p.photos : [])].filter(Boolean).map(imgUrl);
-  const photo = gallery[0] || "";
+  const photo = gallery[cur] || gallery[0] || "";
+  const prev = () => setCur((c) => (c - 1 + gallery.length) % gallery.length);
+  const next = () => setCur((c) => (c + 1) % gallery.length);
   const amenities = ["parking", "balcony", "elevator", "furniture", "air_conditioning", "internet", "pets_allowed"]
     .filter((a) => p[a] === true || one(p[a]) === "true");
   const latlng = parseLatLng(p.location);
@@ -75,25 +79,71 @@ export default function PropertyDetail() {
     <div className="animate-fade-up">
       {/* ---------------------------------------------------------- gallery */}
       <section className="grid gap-3 lg:grid-cols-[1fr_auto]">
-        <div
-          className="thumb relative h-72 sm:h-[28rem] rounded-3xl overflow-hidden shadow-soft ring-1 ring-ink/[0.06]"
-          style={photo ? { backgroundImage: `url(${photo})` } : {}}
-        >
-          {!photo && <span className="text-muted text-sm">No photo</span>}
+        {/* main image */}
+        <div className="relative h-72 sm:h-[28rem] rounded-3xl overflow-hidden shadow-soft ring-1 ring-ink/[0.06] bg-bg">
+          {photo ? (
+            <img
+              key={cur}
+              src={photo}
+              alt={p.title}
+              className="h-full w-full object-cover transition-opacity duration-300"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-muted text-sm">No photo</span>
+          )}
+
+          {/* deal type pill */}
           {photo && (
             <span className="absolute left-4 top-4 chip bg-white/85 text-ink backdrop-blur capitalize">
               {one(p.deal_type) || "sale"}
             </span>
           )}
+
+          {/* prev / next arrows */}
+          {gallery.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 shadow-soft backdrop-blur ring-1 ring-ink/10 transition hover:bg-white"
+                aria-label="Previous image"
+              >
+                <ChevronRight className="h-4 w-4 rotate-180 text-ink" />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 shadow-soft backdrop-blur ring-1 ring-ink/10 transition hover:bg-white"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-4 w-4 text-ink" />
+              </button>
+              {/* dot indicators */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {gallery.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCur(i)}
+                    className={`h-1.5 rounded-full transition-all duration-200 ${i === cur ? "w-5 bg-white" : "w-1.5 bg-white/50"}`}
+                    aria-label={`Image ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
+
+        {/* thumbnail strip */}
         {gallery.length > 1 && (
-          <div className="flex gap-3 lg:flex-col overflow-x-auto lg:overflow-y-auto lg:max-h-[28rem] lg:w-28 pb-1 lg:pb-0">
+          <div className="flex gap-2 lg:flex-col overflow-x-auto lg:overflow-y-auto lg:max-h-[28rem] lg:w-28 pb-1 lg:pb-0">
             {gallery.map((g, i) => (
-              <div
+              <button
                 key={i}
-                className="thumb shrink-0 w-24 h-20 lg:w-full lg:h-24 rounded-2xl overflow-hidden ring-1 ring-ink/[0.06] transition-transform duration-200 hover:-translate-y-0.5"
-                style={{ backgroundImage: `url(${g})` }}
-              />
+                onClick={() => setCur(i)}
+                className={`shrink-0 w-20 h-16 lg:w-full lg:h-20 rounded-xl overflow-hidden ring-2 transition-all duration-150 ${
+                  i === cur ? "ring-brand-600 opacity-100" : "ring-ink/[0.08] opacity-60 hover:opacity-90"
+                }`}
+              >
+                <img src={g} alt="" className="h-full w-full object-cover" />
+              </button>
             ))}
           </div>
         )}
