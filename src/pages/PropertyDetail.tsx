@@ -97,8 +97,8 @@ export default function PropertyDetail() {
     try {
       const deal = await itemCreate("deal", {
         property_id: id,
-        user_base_id: one(p.user_base_id),   // agent/owner
-        user_base_id_2: user!.user_id,        // buyer
+        user_base_id: user!.user_id,          // buyer (matches Deals form convention)
+        user_base_id_2: one(p.user_base_id),  // agent/owner
         deal_type: arr("purchase"),
         amount: Number(p.price || 0),
         status: arr("pending"),

@@ -406,9 +406,9 @@ function MyPurchases({ uid }: { uid: string }) {
 
   useEffect(() => {
     itemList("deal", {}, 1, 200).then((r) => {
-      // buyer is stored as user_base_id_2 in deals created via "Buy Now"
+      // buyer is user_base_id (new convention) or user_base_id_2 (old buyNow)
       const mine = r.items.filter(
-        (d: any) => d.user_base_id_2 === uid
+        (d: any) => d.user_base_id === uid || d.user_base_id_2 === uid
       );
       setDeals(mine);
       const ids = [...new Set(mine.map((d: any) => d.property_id).filter(Boolean))] as string[];
