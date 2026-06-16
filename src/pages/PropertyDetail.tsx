@@ -97,7 +97,7 @@ export default function PropertyDetail() {
     try {
       const deal = await itemCreate("deal", {
         property_id: id,
-        user_base_id: user!.user_id,          // buyer (matches Deals form convention)
+        user_base_id: user!.guid ?? user!.user_id,  // buyer: use user_base.guid for FK
         user_base_id_2: one(p.user_base_id),  // agent/owner
         deal_type: arr("purchase"),
         amount: Number(p.price || 0),
@@ -117,7 +117,7 @@ export default function PropertyDetail() {
 
   async function addFavorite() {
     setErr(""); setMsg("");
-    try { await itemCreate("favorite", { user_base_id: user!.user_id, property_id: id }); setMsg("Added to favorites"); }
+    try { await itemCreate("favorite", { user_base_id: user!.guid ?? user!.user_id, property_id: id }); setMsg("Added to favorites"); }
     catch (e: any) { setErr(e.message); }
   }
   async function book() {
@@ -131,7 +131,7 @@ export default function PropertyDetail() {
       await itemCreate("review", {
         rating: rev.rating, comment: rev.comment,
         user_base_id: one(p.user_base_id), // agent
-        user_base_id_2: user!.user_id,     // client
+        user_base_id_2: user!.guid ?? user!.user_id,  // client: use user_base.guid for FK
       });
       setRev({ rating: 5, comment: "" });
       setMsg("Review submitted");

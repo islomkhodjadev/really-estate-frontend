@@ -30,7 +30,7 @@ function StatusPill({ value }: { value: any }) {
 export default function Dashboard() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("viewings");
-  const uid = user!.user_id!;
+  const uid = (user!.guid ?? user!.user_id)!;
   const T: [Tab, string, (c: string) => JSX.Element][] = [
     ["viewings", "My viewings", (c) => <Calendar className={c} />],
     ["incoming", "Incoming requests", (c) => <Bell className={c} />],

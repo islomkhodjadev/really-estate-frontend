@@ -16,7 +16,7 @@ export default function NotificationBell() {
     try {
       const { items } = await itemList("notification", {}, 1, 200);
       // filter to only this user's notifications, newest first
-      const mine = items.filter((n: any) => n.user_base_id === user.user_id);
+      const mine = items.filter((n: any) => n.user_base_id === (user.guid ?? user.user_id));
       mine.sort((a: any, b: any) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
       setItems(mine);
     } catch { /* ignore polling errors */ }
