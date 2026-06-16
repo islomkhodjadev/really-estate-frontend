@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { itemList, itemUpdate, itemCreate, uploadFile, invoke, one, arr } from "../api/client";
+import { itemList, itemUpdate, itemCreate, itemGet, uploadFile, invoke, one, arr } from "../api/client";
 import { downloadCSV } from "../api/util";
 import { ENUMS } from "../config";
 import { useAuth } from "../auth/AuthContext";
@@ -406,22 +406,22 @@ function MyPurchases({ uid }: { uid: string }) {
 
   useEffect(() => {
     itemList("deal", {}, 1, 200).then((r) => {
+      // buyer is stored as user_base_id_2 in deals created via "Buy Now"
       const mine = r.items.filter(
-        (d: any) => d.user_base_id === uid || d.user_base_id_2 === uid
+        (d: any) => d.user_base_id_2 === uid
       );
       setDeals(mine);
-      // Fetch property details for each deal
       const ids = [...new Set(mine.map((d: any) => d.property_id).filter(Boolean))] as string[];
       ids.forEach((pid) => {
-        itemList("property", { guid: pid }, 1, 1).then((r2) => {
-          const p = r2.items[0];
-          if (p) setPropMap((m) => ({ ...m, [pid]: p }));
+        itemGet("property", pid).then((p) => {
+          if (p?.guid) setPropMap((m) => ({ ...m, [pid]: p }));
         }).catch(() => {});
       });
     });
   }, [uid]);
 
-  const purchased = deals.filter((d) => one(d.status) === "completed" && one(d.deal_type) === "purchase");
+  // show all purchase deals (any status) where this user is the buyer
+  const purchased = deals.filter((d) => one(d.deal_type) === "purchase");
   const CDN = import.meta.env.VITE_CDN_BASE || "https://cdn.u-code.io/";
 
   if (purchased.length === 0) {
