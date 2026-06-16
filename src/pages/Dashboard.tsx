@@ -5,12 +5,13 @@ import { downloadCSV } from "../api/util";
 import { ENUMS } from "../config";
 import { useAuth } from "../auth/AuthContext";
 import { FileUpload } from "../components/Upload";
+import { MyCards, PayWithCardButton } from "../components/MyCards";
 import {
   Calendar, Bell, Building, CreditCard, Clock, TrendingUp,
   Plus, Check, X, CheckCircle, FileText, ArrowRight, User,
 } from "../components/icons";
 
-type Tab = "viewings" | "incoming" | "properties" | "deals" | "rentals" | "reports";
+type Tab = "viewings" | "incoming" | "properties" | "deals" | "rentals" | "reports" | "cards";
 
 /** Soft, capitalized status pill that lightly tints by common status keywords. */
 function StatusPill({ value }: { value: any }) {
@@ -36,6 +37,7 @@ export default function Dashboard() {
     ["properties", "My properties", (c) => <Building className={c} />],
     ["deals", "Deals", (c) => <CreditCard className={c} />],
     ["rentals", "Rentals", (c) => <Clock className={c} />],
+    ["cards", "My cards", (c) => <CreditCard className={c} />],
     ["reports", "Reports", (c) => <TrendingUp className={c} />],
   ];
   return (
@@ -82,6 +84,11 @@ export default function Dashboard() {
         {tab === "properties" && <MyProperties uid={uid} />}
         {tab === "deals" && <Deals uid={uid} />}
         {tab === "rentals" && <Rentals uid={uid} />}
+        {tab === "cards" && (
+          <div className="card p-6 sm:p-8">
+            <MyCards />
+          </div>
+        )}
         {tab === "reports" && <Reports />}
       </div>
     </div>
@@ -317,9 +324,12 @@ function Deals({ uid }: { uid: string }) {
                 </td>
                 <td className="text-right">
                   {one(d.status) !== "completed" && (
-                    <button className="px-3 py-1.5 text-xs" onClick={() => pay(d)}>
-                      <CreditCard className="h-4 w-4" /> Pay
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      <button className="px-3 py-1.5 text-xs" onClick={() => pay(d)}>
+                        <CreditCard className="h-4 w-4" /> Checkout
+                      </button>
+                      <PayWithCardButton dealId={d.guid} onPaid={load} />
+                    </div>
                   )}
                 </td>
               </tr>
