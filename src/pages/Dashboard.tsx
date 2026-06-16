@@ -8,10 +8,10 @@ import { FileUpload } from "../components/Upload";
 import { MyCards, PayWithCardButton } from "../components/MyCards";
 import {
   Calendar, Bell, Building, CreditCard, Clock, TrendingUp,
-  Plus, Check, X, CheckCircle, FileText, ArrowRight, User,
+  Plus, Check, X, CheckCircle, FileText, ArrowRight, User, Star,
 } from "../components/icons";
 
-type Tab = "viewings" | "incoming" | "properties" | "deals" | "rentals" | "reports" | "cards";
+type Tab = "viewings" | "incoming" | "properties" | "deals" | "rentals" | "reports" | "cards" | "purchases";
 
 /** Soft, capitalized status pill that lightly tints by common status keywords. */
 function StatusPill({ value }: { value: any }) {
@@ -37,6 +37,7 @@ export default function Dashboard() {
     ["properties", "My properties", (c) => <Building className={c} />],
     ["deals", "Deals", (c) => <CreditCard className={c} />],
     ["rentals", "Rentals", (c) => <Clock className={c} />],
+    ["purchases", "My purchases", (c) => <Star className={c} />],
     ["cards", "My cards", (c) => <CreditCard className={c} />],
     ["reports", "Reports", (c) => <TrendingUp className={c} />],
   ];
@@ -84,6 +85,7 @@ export default function Dashboard() {
         {tab === "properties" && <MyProperties uid={uid} />}
         {tab === "deals" && <Deals uid={uid} />}
         {tab === "rentals" && <Rentals uid={uid} />}
+        {tab === "purchases" && <MyPurchases uid={uid} />}
         {tab === "cards" && (
           <div className="card p-6 sm:p-8">
             <MyCards />
@@ -394,6 +396,80 @@ function Rentals({ uid }: { uid: string }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function MyPurchases({ uid }: { uid: string }) {
+  const [deals, setDeals] = useState<any[]>([]);
+  const [propMap, setPropMap] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    itemList("deal", {}, 1, 200).then((r) => {
+      const mine = r.items.filter(
+        (d: any) => d.user_base_id === uid || d.user_base_id_2 === uid
+      );
+      setDeals(mine);
+      // Fetch property details for each deal
+      const ids = [...new Set(mine.map((d: any) => d.property_id).filter(Boolean))] as string[];
+      ids.forEach((pid) => {
+        itemList("property", { guid: pid }, 1, 1).then((r2) => {
+          const p = r2.items[0];
+          if (p) setPropMap((m) => ({ ...m, [pid]: p }));
+        }).catch(() => {});
+      });
+    });
+  }, [uid]);
+
+  const purchased = deals.filter((d) => one(d.status) === "completed" && one(d.deal_type) === "purchase");
+  const CDN = import.meta.env.VITE_CDN_BASE || "https://cdn.u-code.io/";
+
+  if (purchased.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-ink/15 bg-surface/60 py-16 text-center">
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-ink/[0.04] text-muted">
+          <Building className="h-5 w-5" />
+        </span>
+        <p className="muted mt-2">No purchased properties yet.</p>
+        <a href="/" className="btn mt-4 inline-flex">Browse listings</a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {purchased.map((d) => {
+        const prop = propMap[d.property_id];
+        const img = prop?.images?.[0] ? `${CDN}${prop.images[0]}` : null;
+        return (
+          <div key={d.guid} className="panel flex flex-col gap-3">
+            {img ? (
+              <img src={img} alt={prop?.title} className="h-44 w-full rounded-xl object-cover" />
+            ) : (
+              <div className="flex h-44 w-full items-center justify-center rounded-xl bg-ink/[0.04]">
+                <Building className="h-8 w-8 text-muted" />
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="font-display font-semibold text-ink line-clamp-2">
+                {prop?.title ?? `Property ${String(d.property_id || "").slice(0, 8)}`}
+              </p>
+              {prop?.address && <p className="mt-0.5 text-xs text-muted">{prop.address}</p>}
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-stat font-bold text-ink tabular-nums">
+                {Number(d.amount || prop?.price || 0).toLocaleString()} $
+              </span>
+              <StatusPill value={d.status} />
+            </div>
+            {prop && (
+              <a href={`/property/${prop.guid}`} className="ghost w-full text-center text-sm">
+                <ArrowRight className="h-4 w-4" /> View property
+              </a>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

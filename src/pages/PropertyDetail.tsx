@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { itemGet, itemList, itemCreate, invoke, one, imgUrl } from "../api/client";
+import { itemGet, itemList, itemCreate, invoke, one, imgUrl, arr } from "../api/client";
 import { parseLatLng } from "../api/util";
 import { PropertyMap, PriceHeatmap, HeatPoint } from "../components/PropertyMap";
 import { PropertyCard } from "./PropertyCard";
 import { useAuth } from "../auth/AuthContext";
-import { Heart, Star, ChevronRight } from "../components/icons";
+import { Heart, Star, ChevronRight, CreditCard, RefreshCw } from "../components/icons";
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -19,6 +19,7 @@ export default function PropertyDetail() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [date, setDate] = useState("");
+  const [buying, setBuying] = useState(false);
   const [rev, setRev] = useState({ rating: 5, comment: "" });
 
   async function load() {
@@ -90,6 +91,29 @@ export default function PropertyDetail() {
     .filter((a) => p[a] === true || one(p[a]) === "true");
   const latlng = parseLatLng(p.location);
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1) : null;
+
+  async function buyNow() {
+    setErr(""); setMsg(""); setBuying(true);
+    try {
+      const deal = await itemCreate("deal", {
+        property_id: id,
+        user_base_id: one(p.user_base_id),   // agent/owner
+        user_base_id_2: user!.user_id,        // buyer
+        deal_type: arr("purchase"),
+        amount: Number(p.price || 0),
+        status: arr("pending"),
+      });
+      const dealId = deal?.guid ?? deal?.data?.guid;
+      if (!dealId) throw new Error("Could not create deal");
+      const res = await invoke("create_checkout_session", { deal_id: dealId });
+      if (res?.url) { window.location.href = res.url; return; }
+      throw new Error("No checkout URL returned");
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBuying(false);
+    }
+  }
 
   async function addFavorite() {
     setErr(""); setMsg("");
@@ -369,13 +393,23 @@ export default function PropertyDetail() {
             </div>
             {user ? (
               <>
-                <button className="ghost w-full inline-flex items-center justify-center gap-2" onClick={addFavorite}>
+                <button
+                  className="w-full inline-flex items-center justify-center gap-2 mt-3"
+                  onClick={buyNow}
+                  disabled={buying}
+                >
+                  {buying
+                    ? <><RefreshCw className="h-4 w-4 animate-spin" /> Processing…</>
+                    : <><CreditCard className="h-4 w-4" /> Buy now · {Number(p.price || 0).toLocaleString()} {one(p.currency) || "USD"}</>
+                  }
+                </button>
+                <button className="ghost w-full inline-flex items-center justify-center gap-2 mt-2" onClick={addFavorite}>
                   <Heart className="h-4 w-4" /> Add to favorites
                 </button>
                 <div className="field mt-4"><label>Viewing date & time</label>
                   <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
-                <button className="w-full" disabled={!date} onClick={book}>Book a viewing</button>
+                <button className="w-full mt-2" disabled={!date} onClick={book}>Book a viewing</button>
               </>
             ) : (
               <p className="muted mt-2">Please <Link to="/login">log in</Link> to book or save.</p>
