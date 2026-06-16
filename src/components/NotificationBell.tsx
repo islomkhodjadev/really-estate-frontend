@@ -51,10 +51,10 @@ export default function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <button className="ghost !px-2.5 relative" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="Notifications">
+      <button className="ghost !px-2.5 relative inline-flex items-center justify-center" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="Notifications">
         <Bell className="h-5 w-5" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] bg-accent text-white text-[10px] font-stat font-semibold leading-none rounded-full px-1 shadow-glow ring-2 ring-surface">
+          <span className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white ring-2 ring-surface">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
